@@ -47,7 +47,10 @@ def random_walk(directory):
 def copy_folder(directory):
     if not os.path.exists(os.path.join(dst, os.path.basename(directory))):
         print os.path.basename(directory)
-        shutil.copytree(directory, os.path.join(dst, os.path.basename(directory)))
+        try:
+        	shutil.copytree(directory, os.path.join(dst, os.path.basename(directory)))
+        except Exception as e:
+        	print "Could not copy folder '%s'" % directory
 
 def space_left(directory):
     return get_size(directory) < max_size * 1024 * 1024
