@@ -1,14 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""Random Music by Marcus Götling, www.gotling.se
+
+Usage:
+    random-music.py <src> <dst> <size> [--delete]
+
+Options:
+    --delete  Remove and recreate destination folder before copying files.
+"""
+
 import os
 import random
 import shutil
-
-# Settings
-src='/Users/gotling/Sandbox/random-music/input'
-dst='/Users/gotling/Sandbox/random-music/output'
-max_size=512
+from docopt import docopt
 
 def regular_file(item):
     return not item.startswith('.')
@@ -38,36 +43,33 @@ def get_size(directory):
 def is_top_dir(directory):
     return len(get_folders(directory)) == 0
 
-def random_walk(directory):
-    if(is_top_dir(directory)):
-        copy_folder(directory)
+def random_walk(source, destination):
+    if(is_top_dir(source)):
+        copy_folder(source, destination)
     else:
-        random_walk(os.path.join(directory, random.choice(get_folders(directory))))
+        random_walk(os.path.join(source, random.choice(get_folders(source))), destination)
 
-def copy_folder(directory):
-    if not os.path.exists(os.path.join(dst, os.path.basename(directory))):
-        print os.path.basename(directory)
+def copy_folder(source, destination):
+    if not os.path.exists(os.path.join(destination, os.path.basename(source))):
+        print os.path.basename(source)
         try:
-        	shutil.copytree(directory, os.path.join(dst, os.path.basename(directory)))
+        	shutil.copytree(source, os.path.join(destination, os.path.basename(source)))
         except Exception as e:
-        	print "Could not copy folder '%s'" % directory
+        	print "Could not copy folder '%s'" % source
 
-def space_left(directory):
+def space_left(directory, max_size):
     return get_size(directory) < max_size * 1024 * 1024
 
 def main():
-    print "Random Music by Marcus Götling, www.gotling.se\n"
-    
-    print "Input:    ", src
-    print "Output:   ", dst
-    print "Max Size: ", max_size, "MiB\n"
+    arguments = docopt(__doc__, version='Random Music 0.1')
 
-    remove_and_create_folder(dst)
+    if (arguments["--delete"]):
+        remove_and_create_folder(arguments["<dst>"])
 
-    while space_left(dst):
-        random_walk(src)
+    while space_left(arguments["<dst>"], arguments["<size>"]):
+        random_walk(arguments["<src>"], arguments["<dst>"])
     
-    print "\nDone. Destination size: %s MiB" % (get_size(dst) / 1024 / 1024)
+    print "\nDone. Destination size: %s MiB" % (get_size(arguments["<dst>"]) / 1024 / 1024)
     
 if __name__ == '__main__':
     main()
