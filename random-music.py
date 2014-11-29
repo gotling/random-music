@@ -16,6 +16,9 @@ import shutil
 from docopt import docopt
 
 
+min_songs_in_album = 5
+
+
 def regular_file(item):
     return not item.startswith('.')
 
@@ -42,6 +45,7 @@ def get_size(directory):
         for f in filenames:
             fp = os.path.join(dirpath, f)
             total_size += os.path.getsize(fp)
+
     return total_size
 
 
@@ -49,9 +53,28 @@ def is_top_dir(directory):
     return len(get_folders(directory)) == 0
 
 
+def get_extensions(directory):
+    extension_count = {}
+
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            base, extension = os.path.splitext(filename)
+            extension = extension.lower()
+
+            if extension in extension_count:
+                extension_count[extension] += 1
+            else:
+                extension_count[extension] = 1
+
+    return extension_count
+
+
 def random_walk(source, destination):
     if is_top_dir(source):
-        copy_folder(source, destination)
+        extensions = get_extensions(source)
+        #print "Extensions:", extensions
+        if extensions.get('.mp3', 0) > min_songs_in_album:
+            copy_folder(source, destination)
     else:
         random_walk(os.path.join(source, random.choice(get_folders(source))), destination)
 
@@ -66,7 +89,10 @@ def copy_folder(source, destination):
 
 
 def space_left(directory, max_size):
-    return get_size(directory) < max_size * 1024 * 1024
+    current_size = get_size(directory)
+    max_size = max_size * 1024 * 1024
+    #print "Size. Current: {} Max: {} Space left: {}".format(current_size, max_size, current_size < max_size)
+    return current_size < max_size
 
 
 def main():
@@ -75,7 +101,7 @@ def main():
     if arguments["--delete"]:
         remove_and_create_folder(arguments["<dst>"])
 
-    while space_left(arguments["<dst>"], arguments["<size>"]):
+    while space_left(arguments["<dst>"], int(arguments["<size>"])):
         random_walk(arguments["<src>"], arguments["<dst>"])
     
     print "\nDone. Destination size: %s MiB" % (get_size(arguments["<dst>"]) / 1024 / 1024)
